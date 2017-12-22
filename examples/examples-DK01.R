@@ -4,7 +4,7 @@ source('R/sensitivity_score.R')
 
 # Emotional labels of interest --------------------------------------------
 target_labels <-
-    c("Joy", "Anger", "Surprise", "Fear", "Disgust", "Sadness")
+    c("Joy", "Anger", "Surprise", "Fear", "Disgust", "Sadness", "Contempt", "Neutral")
 
 targets_for_ADFES <- sapply(target_labels, function(x)
     paste0(x, " Evidence"))
@@ -38,6 +38,8 @@ lapply(ADFES_data, function(dataset)
 sensitivity_scores(df = ADFES_data[["North_Europ_F01sadnessface_Forward_7"]],
                    target_labels_for_dataset = targets_for_ADFES)
 
+df_name <-
+    #write_csv(df_name, "ADFES_Test")
 lapply(ADFES_data, function(dataset)
     sensitivity_scores(df = dataset,
                        target_labels_for_dataset = targets_for_ADFES)) %>%
