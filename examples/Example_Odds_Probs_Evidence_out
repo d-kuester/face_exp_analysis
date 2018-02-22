@@ -1,0 +1,69 @@
+source('R/libs.R')
+source('R/confidence_score.R')
+source('R/sensitivity_score.R')
+
+# Emotional labels of interest --------------------------------------------
+target_labels <-
+    c("Joy", "Anger", "Surprise", "Fear", "Disgust", "Sadness")
+
+targets_for_SmallPD_CorrBINED <- sapply(target_labels, function(x)
+    paste0(x, " Evidence"))
+
+# Input files and Data preparation -----------------------------------------------------
+SmallPD_CorrBINED_raw_files <-
+    dir('SmallPD_CorrBINED-raw/', pattern = '^Dump', full.names = TRUE)
+SmallPD_CorrBINED_raw_files
+
+# problem with readr_tsv(); fread works great instead!
+SmallPD_CorrBINED_data <- lapply(SmallPD_CorrBINED_raw_files, function(x){
+    y <- data.table::fread(x, data.table = FALSE)
+    gPattern <- paste0(targets_for_SmallPD_CorrBINED, collapse = '|')
+    y[ , grepl(pattern = gPattern, x = names(y))][is.na(y[ , grepl(pattern = gPattern, x = names(y))])] <- -99
+    y
+}) %>%
+    set_names(nm = gsub("raw-data//|\\.txt$", "", SmallPD_CorrBINED_raw_files) %>%
+                  gsub('Dump\\d+_', '', .) %>%
+                  gsub('\\s+|-', "_", .)
+    )
+
+
+# examples confidence scores -----------------------------------------------
+#single data frame
+
+
+#list of data frames
+df_confidence <-
+    lapply(SmallPD_CorrBINED_data, function(dataset)
+        confidence_score(df = dataset,
+                         target_labels_for_dataset = targets_for_SmallPD_CorrBINED)) %>%
+    plyr::ldply(.id = "file_Id")
+write.csv(df_confidence, "SmallPD_CorrBINED_Confidence_B6.csv")
+
+# examples sensitivity scores ---------------------------------------------
+
+
+df_sensitivity <-
+    lapply(SmallPD_CorrBINED_data, function(dataset)
+        sensitivity_scores(df = dataset,
+                           target_labels_for_dataset = targets_for_SmallPD_CorrBINED)) %>%
+    plyr::ldply(.id = "file_Id")
+write.csv(df_sensitivity, "SmallPD_CorrBINED_Sensitivity_B6.csv")
+
+
+#confidence calculated on odds scores
+
+df_Odds <-
+    lapply(SmallPD_CorrBINED_data, function(dataset)
+        confidence_score_odds(df = dataset,
+                              target_labels_for_dataset = targets_for_SmallPD_CorrBINED)) %>%
+    plyr::ldply(.id = "file_Id")
+write.csv(df_Odds, "SmallPD_CorrBINED_Odds_B6.csv")
+
+# a variation: confidence on probabilities for example set DK-comment out this part if needed.
+df_Probs <-
+    lapply(SmallPD_CorrBINED_data, function(dataset)
+        confidence_score_odds(df = dataset,
+                              target_labels_for_dataset = targets_for_SmallPD_CorrBINED,
+                              score_type = 'probs')) %>%
+    plyr::ldply(.id = "file_Id")
+write.csv(df_Probs, "SmallPD_CorrBINED_Probs_B6.csv")
